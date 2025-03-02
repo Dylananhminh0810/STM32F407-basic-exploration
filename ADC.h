@@ -1,0 +1,30 @@
+#include <stdint.h>
+#define ADC1 0x40012000
+#define ADCCOM (ADC1 + 300)
+typedef struct{
+	uint32_t ADC_SR;
+	uint32_t ADC_CR1;
+	uint32_t ADC_CR2;
+	uint32_t ADC_SMPR1;
+	uint32_t ADC_SMPR2;
+	uint32_t ADC_JOFR1;
+	uint32_t ADC_JOFR2;
+	uint32_t ADC_JOFR3;
+	uint32_t ADC_JOFR4;
+	uint32_t ADC_HTR;
+	uint32_t ADC_LTR;
+	uint32_t ADC_SQR1;
+	uint32_t ADC_SQR2;
+	uint32_t ADC_SQR3;
+	uint32_t ADC_JSQR;
+	uint32_t ADC_JDR1;
+	uint32_t ADC_JDR2;
+	uint32_t ADC_JDR3;
+	uint32_t ADC_JDR4;
+	uint32_t ADC_DR;
+} ADCStruct;
+typedef struct{
+	uint32_t ADC_CSR;
+	uint32_t ADC_CCR;
+	uint32_t ADC_CDR;
+} ADCCommonStruct;
