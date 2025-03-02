@@ -1,0 +1,90 @@
+#include <stdint.h>
+#include <stdbool.h>
+#include "Register.h"
+#include "RCC.h"
+#include "GPIO.h"
+#include "NVIC.h"
+#include "EXTI.h"
+#include "SYSCFG.h"
+
+/*Program a timer will create a repeating interrupt 
+every one second and toggle the LED 
+-> turn it on and off every time the interrupt gets triggered*/
+//use PIN12 for green LED
+//-> The hardware configuration will be the same as in examples for turning on the led
+
+#define TIM3_BASE 0x40000400
+
+typedef struct{
+	uint32_t CR1;//0x00
+	uint32_t CR2;//0x04
+	uint32_t SMCR;//0x08
+	uint32_t DIER;//0x0C
+	uint32_t SR;//0x10
+	uint32_t EGR;//0x14
+	uint32_t CCMR1;//0x18
+	uint32_t CCMR2;//0x1C
+	uint32_t CCER;//0x20
+	uint32_t CNT;//0x24
+	uint32_t PSC;//0x28
+	uint32_t ARR;//0x2C
+	uint32_t reserved1;//0x30
+	uint32_t CCR1;//0x34
+	uint32_t CCR2;//0x38
+	uint32_t CCR3;//0x3C
+	uint32_t CCR4;//0x40
+	uint32_t reserved2;//0x44
+	uint32_t DCR;//0x48
+	uint32_t DMAR;//0x4C
+	uint32_t OR;//0x50
+} GeneralPurposeTimer;
+
+void TIM3_IRQHandler(void){
+	static volatile uint8_t i = 0;
+	
+	REG32(TIM3_BASE + 0x10) &= ~((unsigned int)BIT_0);//BIT UIF in PIN TIMx SR to update after interrupt
+	
+	if (i%2){
+		REG32(GPIOD_BASE_ADDRESS + GPIOD_BSRR_OFFSET) |= BIT_28; // LED low
+	}
+	else 
+	{
+		REG32(GPIOD_BASE_ADDRESS + GPIOD_BSRR_OFFSET) |= BIT_12; // LED high
+	}
+	i++;
+}
+
+
+int main(){
+	//set the GPIOD for LD4 - led green
+	GPIOGeneralRegister* GPIOD; 
+	REG32(RCC_BASE_ADDRESS + RCC_AHB1_OFFSET) |= BIT_3; //GPIOD
+	REG32(RCC_BASE_ADDRESS + 0x40) |= BIT_1; //Timer 3 - RCC APB1 EN
+	
+	GPIOD = (GPIOGeneralRegister*)(GPIOD_BASE_ADDRESS);
+	GPIOD->MODER |= BIT_24;
+	GPIOD->OTYPER &= ~(uint32_t)BIT_12;
+	GPIOD->OSPEEDR &= ~(uint32_t)(BIT_24 | BIT_25);
+	GPIOD->PUPDR |= BIT_25;
+
+	//Set registers for timer
+	GeneralPurposeTimer* timer3;
+	timer3 = (GeneralPurposeTimer*)TIM3_BASE;
+	
+	timer3->PSC = 1999; // Prescaler = 2000 -> 16MHz/2000 = 8000 step of counts in 1 second
+	timer3->ARR = 8000; // 8000 steps -> overflow/underflow every 1s
+	timer3->CR1 &= ~((unsigned int)BIT_1); // CR1 BIT1 = 0 to use UEV
+	timer3->CR1 &= ~((unsigned int)BIT_2); // choose the source for update event
+	timer3->DIER |= BIT_0; // interrupt enable register
+	timer3->CR1 &= ~((unsigned int)BIT_3); // count repeat
+	timer3->CR1 &= ~((unsigned int)BIT_4); //count overflow
+	timer3->CR1 |= BIT_0; // counter enable
+	
+	_NVIC_Enable_(_TIM3_IRQn); // enable NVIC for interrupt
+	
+	while(1){
+		
+	}
+	
+	return 0;
+}

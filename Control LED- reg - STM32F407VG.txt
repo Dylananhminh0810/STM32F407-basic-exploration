@@ -1,0 +1,37 @@
+#include <stdint.h>
+//LED Control - Green LED GPIOD - Pin12
+int main(){
+	uint32_t *ptr;
+	
+	ptr = (uint32_t*)(0x40023800 + 0x30);
+	*ptr |= 0x8;
+	
+	ptr = (uint32_t*)(0x40020C00); // mode register
+	*ptr |= (0x1 << 24);
+	
+	ptr++;
+	*ptr &= ~(uint32_t)(1 << 12); //output type
+	
+	ptr++;
+	*ptr &= ~(uint32_t)(0x3 << 24); //output speed
+	
+	ptr++;
+	*ptr |= (0x2 << 24); // pull up / pull down
+	
+	ptr++; // input data
+	ptr++; // output data
+	
+	ptr++; // bit set reset
+	*ptr |= (1 << 12); //set high
+	*ptr |= (1<<28); //set low
+	
+	*ptr |= (1 << 12); //set high
+	*ptr |= (1<<28); //set low
+	
+	*ptr |= (1 << 12); //set high
+	*ptr |= (1<<28); //set low
+	while (1){
+	
+	}
+	return 0;
+}

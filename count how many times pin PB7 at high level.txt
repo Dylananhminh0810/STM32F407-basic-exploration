@@ -1,0 +1,40 @@
+#include <stdint.h>
+#include <stdbool.h>
+#include "Register.h"
+#include "RCC.h"
+#include "GPIO.h"
+
+int pinPB7Counter = 0;
+void executeWhenPinHigh(){
+	pinPB7Counter++;
+}
+
+int main(){
+	GPIOGeneralRegister* GPIOB;
+	
+	REG32(RCC_BASE_ADDRESS + RCC_AHB1_OFFSET) |= BIT_1;
+	
+	GPIOB = (GPIOGeneralRegister*)(GPIOB_BASE_ADDRESS);
+	
+	GPIOB->MODER &= ~(uint32_t)(BIT_15 | BIT_14);
+	
+	GPIOB->OTYPER &= ~(uint32_t)BIT_7;
+	
+	GPIOB->OSPEEDR |= BIT_14;
+	
+	GPIOB->PUPDR |= BIT_15;
+	
+	bool volatile pinPB7Status; // input data reg
+	pinPB7Status = ((GPIOB->IDR) & BIT_7);
+	
+	
+	
+	while(1){
+		pinPB7Status = ((GPIOB->IDR) & BIT_7);
+		if (pinPB7Status){
+			executeWhenPinHigh();
+		}
+	}
+	
+	return 0;
+}
